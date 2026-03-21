@@ -2,7 +2,7 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #111827;
 }
 
 @theme inline {
@@ -12,15 +12,84 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ── Leaflet popup light theme ─────────────────────────────── */
+.leaflet-popup-content-wrapper {
+  background: #ffffff;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.02);
+  padding: 0;
+  overflow: hidden;
+}
+
+.leaflet-popup-content {
+  margin: 0;
+  color: #111827;
+}
+
+.leaflet-popup-tip-container .leaflet-popup-tip {
+  background: #ffffff;
+  box-shadow: none;
+}
+
+.leaflet-popup-close-button {
+  color: #9ca3af;
+  font-size: 18px;
+  padding: 6px 8px;
+  top: 6px;
+  right: 6px;
+}
+.leaflet-popup-close-button:hover {
+  color: #f59e0b;
+}
+
+/* ── Leaflet attribution bar ──────────────────────────────── */
+.leaflet-control-attribution {
+  background: rgba(255,255,255,0.85) !important;
+  color: #6b7280 !important;
+  font-size: 9px !important;
+  border-radius: 6px 0 0 0;
+}
+.leaflet-control-attribution a { color: #9ca3af !important; }
+
+/* ── Zoom controls ────────────────────────────────────────── */
+.leaflet-bar a {
+  background: #ffffff !important;
+  color: #374151 !important;
+  border-color: rgba(0,0,0,0.08) !important;
+}
+.leaflet-bar a:hover {
+  background: #f9fafb !important;
+  color: #f59e0b !important;
+}
+
+/* ── User location pulse animation ───────────────────────── */
+@keyframes pulse-ring {
+  0%   { transform: scale(0.5); opacity: 0.8; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+
+@keyframes skeletonShimmer {
+  0% { transform: translateX(-100%) skewX(-12deg); }
+  100% { transform: translateX(400%) skewX(-12deg); }
+}
+
+@keyframes pulse-subtle {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.85; }
+  100% { opacity: 1; }
+}
+
+.animate-pulse-subtle {
+  animation: pulse-subtle 3s ease-in-out infinite;
+}
+
+.animate-skeleton {
+  animation: skeletonShimmer 2s infinite;
 }

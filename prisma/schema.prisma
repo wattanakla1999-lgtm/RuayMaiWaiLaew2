@@ -1,0 +1,125 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// =====================
+// Enums
+// =====================
+
+enum Role {
+  USER
+  OWNER
+  ADMIN
+}
+
+enum StationStatus {
+  PENDING
+  ACTIVE
+  REJECTED
+}
+
+enum FuelStatus {
+  AVAILABLE
+  LOW
+  EMPTY
+}
+
+enum FuelType {
+  DIESEL
+  DIESEL_B7
+  DIESEL_B20
+  DIESEL_PREMIUM
+  GASOHOL_91
+  GASOHOL_95
+  GASOHOL_E20
+  GASOHOL_E85
+  BENZINE
+}
+
+// =====================
+// Models
+// =====================
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      Role     @default(USER)
+  image     String?
+  stations  Station[]
+  reports   FuelReport[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Station {
+  id            String        @id @default(cuid())
+  name          String
+  lat           Float
+  lng           Float
+  address       String?
+  phone         String?
+  brand         String?
+  image         String?
+  status        StationStatus @default(PENDING)
+  ownerId       String?
+  owner         User?         @relation(fields: [ownerId], references: [id])
+  fuels         StationFuel[]
+  fuelLogs      FuelStatusLog[]
+  reports       FuelReport[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([lat, lng])
+  @@index([status])
+  @@index([ownerId])
+}
+
+model StationFuel {
+  id               String     @id @default(cuid())
+  stationId        String
+  station          Station    @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  fuelType         FuelType
+  status           FuelStatus @default(AVAILABLE)
+  restockEstimate  DateTime?
+  updatedAt        DateTime   @updatedAt
+
+  @@unique([stationId, fuelType])
+  @@index([stationId])
+}
+
+model FuelStatusLog {
+  id          String     @id @default(cuid())
+  stationId   String
+  station     Station    @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  fuelType    FuelType
+  fuelStatus  FuelStatus
+  updatedById String?
+  note        String?
+  createdAt   DateTime   @default(now())
+
+  @@index([stationId, createdAt])
+}
+
+model FuelReport {
+  id         String     @id @default(cuid())
+  stationId  String
+  station    Station    @relation(fields: [stationId], references: [id], onDelete: Cascade)
+  userId     String?
+  user       User?      @relation(fields: [userId], references: [id])
+  fuelType   FuelType
+  fuelStatus FuelStatus
+  ip         String?
+  createdAt  DateTime   @default(now())
+
+  @@index([stationId, createdAt])
+  @@index([ip, stationId])
+}
