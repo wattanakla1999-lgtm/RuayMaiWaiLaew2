@@ -20,17 +20,32 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         try {
           const admin = supabaseAdmin();
+          if (!admin) {
+            console.error("[AUTH] supabaseAdmin initialized as null - check SUPABASE_SERVICE_ROLE_KEY");
+            return null;
+          }
+
+          console.log("[AUTH] Attempting login for:", credentials.email);
           const { data, error } = await admin.auth.signInWithPassword({
             email: credentials.email as string,
             password: credentials.password as string,
           });
 
-          if (error || !data.user) return null;
+          if (error) {
+            console.error("[AUTH] Supabase error:", error.message);
+            return null;
+          }
+
+          if (!data.user) {
+            console.error("[AUTH] No user data returned");
+            return null;
+          }
 
           // Upsert user in Supabase
           const { data: user, error: upsertError } = await admin
             .from('User')
             .upsert({
+              id: data.user.id,
               email: data.user.email!,
               name: data.user.user_metadata?.name ?? null,
               image: data.user.user_metadata?.avatar_url ?? null,
@@ -39,7 +54,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             .select()
             .single();
 
-          if (upsertError || !user) return null;
+          if (upsertError || !user) {
+            console.error("[AUTH] Upsert error:", upsertError?.message);
+            return null;
+          }
 
           return {
             id: user.id,
@@ -48,7 +66,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             image: user.image,
             role: user.role,
           };
-        } catch {
+        } catch (err: any) {
+          console.error("[AUTH] Unexpected error:", err?.message || err);
           return null;
         }
       },
