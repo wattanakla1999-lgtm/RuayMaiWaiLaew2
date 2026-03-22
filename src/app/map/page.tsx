@@ -93,11 +93,11 @@ export default function MapPage() {
         </Link>
         <div className="flex-1">
           <h1 className="text-gray-900 font-extrabold text-lg tracking-tight">ปั๊มน้ำมันใกล้ฉัน</h1>
-          {geoError ? (
+          {/* {geoError ? (
             <p suppressHydrationWarning className="text-gray-500/80 text-[10px] uppercase tracking-widest font-bold">⚠️ GPS ปิดอยู่ • แสดงเขตกทม.</p>
           ) : (
             <p suppressHydrationWarning className="text-emerald-600/80 text-[10px] uppercase tracking-widest font-bold">🛰️ ระบุตำแหน่งด้วยดาวเทียม</p>
-          )}
+          )} */}
         </div>
         <button
           id="refresh-btn"

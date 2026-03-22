@@ -26,7 +26,7 @@ export default function DashboardPage() {
   const [restockDate, setRestockDate] = useState("");
 
   useEffect(() => {
-    fetch("/api/stations")
+    fetch("/api/stations/me")
       .then((r) => r.json())
       .then((d) => setStations(d.data ?? []))
       .finally(() => setLoading(false));
@@ -86,9 +86,7 @@ export default function DashboardPage() {
 
   if (!session || loading) return <LoadingSkeleton />;
 
-  const myStations = stations.filter(
-    (s) => (s.owner as { id: string } | null)?.id === session?.user?.id
-  );
+  const myStations = stations;
 
   return (
     <main className="min-h-screen bg-[#F8FAF9] text-slate-900 font-sans selection:bg-[#008952]/10 selection:text-[#008952]">
@@ -109,12 +107,12 @@ export default function DashboardPage() {
             >
               <span className="group-hover:-translate-x-0.5 transition-transform text-xl font-black">←</span>
             </Link>
-            <div className="w-12 h-12 rounded-2xl bg-[#008952] shadow-xl shadow-[#008952]/20 flex items-center justify-center transform transition-transform hover:scale-105 active:scale-95 cursor-pointer">
+            {/* <div className="w-12 h-12 rounded-2xl bg-[#008952] shadow-xl shadow-[#008952]/20 flex items-center justify-center transform transition-transform hover:scale-105 active:scale-95 cursor-pointer">
               <span className="text-white text-2xl">⛽</span>
-            </div>
+            </div> */}
             <div>
               <h1 className="font-black text-xl tracking-tighter text-slate-900 leading-none">จัดการปั๊ม</h1>
-              <p className="text-[10px] font-bold text-[#008952] uppercase tracking-[0.2em] mt-1 opacity-70">ศูนย์รวมเจ้าของปั๊ม</p>
+              {/* <p className="text-[10px] font-bold text-[#008952] uppercase tracking-[0.2em] mt-1 opacity-70">ศูนย์รวมเจ้าของปั๊ม</p> */}
             </div>
           </div>
           <button
@@ -138,11 +136,7 @@ export default function DashboardPage() {
 
         {myStations.length === 0 ? (
           <div className="text-center py-20 bg-white/80 backdrop-blur-md rounded-[3rem] border border-white shadow-2xl shadow-[#008952]/5">
-            <div className="w-24 h-24 bg-[#F8FAF9] rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner border border-white">
-              <span className="text-6xl animate-bounce duration-1000">⛽</span>
-            </div>
-            <h3 className="text-2xl font-black text-slate-900 mb-3 tracking-tighter">ยังไม่มีปั๊มในระบบ</h3>
-            <p className="text-slate-400 text-sm mb-10 px-12 font-medium leading-relaxed">ร่วมเป็นส่วนหนึ่งของชุมชน <br />เพื่อแจ้งข้อมูลที่แม่นยำแก่ผู้ใช้คนไทย</p>
+            <h3 className="text-2xl font-black text-slate-900 mb-3 p-4 tracking-tighter">ไม่มีข้อมูล</h3>
             <Link href="/add-station" className="inline-flex items-center gap-3 bg-[#008952] hover:bg-[#007445] text-white font-black px-10 py-4 rounded-2xl transition-all active:scale-95 shadow-xl shadow-[#008952]/30 group">
               <span className="text-lg">+</span>
               <span>เพิ่มปั๊มน้ำมันแรก</span>
@@ -248,7 +242,7 @@ export default function DashboardPage() {
                             {fuel.status === "EMPTY" && fuel.restockEstimate && (
                               <div className="mt-3 px-4 py-3 bg-amber-50 border border-amber-100 rounded-2xl flex items-center justify-between gap-3 animate-pulse-subtle shadow-sm">
                                 <span className="text-[10px] font-black text-amber-600 uppercase tracking-[0.15em] flex items-center gap-1.5">
-                                  <span>⏲️</span> คาดว่าน้ำมันจะมา:
+                                  คาดว่าน้ำมันจะมา:
                                 </span>
                                 <span className="text-[10px] font-black text-amber-700 bg-white px-3 py-1 rounded-xl border border-amber-200">
                                   {new Date(fuel.restockEstimate).toLocaleDateString("th-TH", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false })} น.
@@ -278,9 +272,6 @@ export default function DashboardPage() {
       {restockModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-3xl animate-in fade-in duration-300">
           <div className="bg-white rounded-[3rem] p-10 w-full max-w-sm shadow-3xl relative animate-in zoom-in-95 slide-in-from-bottom-12 duration-500 border border-white">
-            <div className="w-20 h-20 bg-red-50 rounded-[2rem] flex items-center justify-center mb-8 shadow-inner">
-              <span className="text-4xl">⏱️</span>
-            </div>
             <h3 className="text-3xl font-black text-slate-900 mb-2 leading-none tracking-tighter uppercase">น้ำมันจะมาเมื่อไหร่?</h3>
             <p className="text-slate-400 text-sm font-bold mb-10 leading-relaxed uppercase tracking-tight opacity-70">แจ้งเวลาโดยประมาณที่น้ำมันจะมาเติม</p>
 
@@ -299,7 +290,7 @@ export default function DashboardPage() {
                   type="submit"
                   className="w-full px-6 py-5 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black transition-all active:scale-95 shadow-xl shadow-red-500/20 uppercase tracking-[0.1em]"
                 >
-                  ยืนยันว่าหมดแล้ว
+                  ยืนยัน
                 </button>
                 <button
                   type="button"
@@ -319,14 +310,14 @@ export default function DashboardPage() {
           <div className="bg-white rounded-[2.5rem] p-10 max-w-sm w-full shadow-2xl animate-in zoom-in-95 duration-500 border border-slate-100 text-center relative z-20">
 
             <h3 className="text-2xl font-black text-slate-900 mb-2 leading-none tracking-tighter uppercase">ออกจากระบบ?</h3>
-            <p className="text-slate-400 text-sm font-bold leading-relaxed mb-10 tracking-tight opacity-70 uppercase">คุณแน่ใจหรือไม่ว่าต้องการออกจากระบบจัดการปั๊มในขณะนี้?</p>
+            <p className="text-slate-400 text-sm font-bold leading-relaxed mb-10 tracking-tight opacity-70 uppercase">คุณแน่ใจหรือไม่ว่าต้องการออกจากระบบ?</p>
 
             <div className="flex flex-col gap-3">
               <button
                 onClick={() => signOut({ callbackUrl: "/" })}
                 className="w-full py-5 rounded-[1.5rem] text-sm font-black bg-red-500 text-white shadow-xl shadow-red-500/20 hover:bg-red-600 transition-all active:scale-95 uppercase tracking-[0.1em]"
               >
-                ยืนยัน ออกจากระบบ
+                ยืนยัน
               </button>
               <button
                 onClick={() => setShowSignOutModal(false)}

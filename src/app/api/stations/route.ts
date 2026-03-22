@@ -1,5 +1,6 @@
 import { type NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
+import crypto from "crypto";
+import { supabaseAdmin } from "@/lib/supabase";
 import { auth } from "@/lib/auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { CreateStationSchema } from "@/lib/validations";
@@ -8,30 +9,30 @@ import type { ApiResponse } from "@/types";
 // GET /api/stations — list all ACTIVE stations
 export async function GET(): Promise<Response> {
   try {
-    const stations = await prisma.station.findMany({
-      where: { status: "ACTIVE" },
-      include: {
-        owner: { select: { id: true, name: true } },
-        fuels: true,
-      },
-      orderBy: { updatedAt: "desc" },
-    });
+    const supabase = supabaseAdmin();
+    const { data: stations, error: fetchError } = await supabase
+      .from('Station')
+      .select('*, owner:User(id, name), fuels:StationFuel(*)')
+      .eq('status', 'ACTIVE')
+      .order('updatedAt', { ascending: false });
 
-    const result = stations.map((s) => {
+    if (fetchError) throw fetchError;
+
+    const result = stations.map((s: any) => {
       // Simple summary logic:
       // - If any fuel is AVAILABLE, status is AVAILABLE
       // - Else if any is LOW, status is LOW
       // - Else EMPTY
       let summaryStatus: "AVAILABLE" | "LOW" | "EMPTY" = "EMPTY";
-      if (s.fuels.some((f) => f.status === "AVAILABLE")) {
+      if (s.fuels.some((f: any) => f.status === "AVAILABLE")) {
         summaryStatus = "AVAILABLE";
-      } else if (s.fuels.some((f) => f.status === "LOW")) {
+      } else if (s.fuels.some((f: any) => f.status === "LOW")) {
         summaryStatus = "LOW";
       }
 
       // Latest fuel update
       const latestUpdate = s.fuels.reduce(
-        (latest, f) => (f.updatedAt > latest ? f.updatedAt : latest),
+        (latest: string, f: any) => (f.updatedAt > latest ? f.updatedAt : latest),
         s.updatedAt
       );
 
@@ -79,8 +80,11 @@ export async function POST(request: NextRequest): Promise<Response> {
 
   try {
     const session = await auth();
-    const station = await prisma.station.create({
-      data: {
+    const supabase = supabaseAdmin();
+    const { data: station, error: createError } = await supabase
+      .from('Station')
+      .insert({
+        id: crypto.randomUUID(),
         name: parsed.data.name,
         lat: parsed.data.lat,
         lng: parsed.data.lng,
@@ -88,19 +92,42 @@ export async function POST(request: NextRequest): Promise<Response> {
         phone: parsed.data.phone,
         brand: parsed.data.brand,
         image: parsed.data.image,
-        status: "PENDING",
+        status: "ACTIVE",
         ownerId: session?.user?.id ?? null,
-        fuels: parsed.data.fuels ? {
-          create: parsed.data.fuels,
-        } : undefined,
-      },
-    });
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (createError) throw createError;
+
+    let finalFuels: any[] = [];
+    if (parsed.data.fuels && parsed.data.fuels.length > 0) {
+      const fuelsToCreate = parsed.data.fuels.map(f => ({
+        ...f,
+        id: crypto.randomUUID(),
+        stationId: station.id,
+        updatedAt: new Date().toISOString(),
+      }));
+      console.log("[POST /api/stations] Inserting fuels:", fuelsToCreate);
+      const { error: fuelsError } = await supabase
+        .from('StationFuel')
+        .insert(fuelsToCreate);
+      
+      if (fuelsError) {
+        console.error("[POST /api/stations] Fuels direct insert failed", fuelsError);
+        throw new Error("สร้างปั๊มสำเร็จแต่บันทึกชนิดน้ำมันล้มเหลว");
+      }
+      finalFuels = fuelsToCreate;
+    }
+
     return Response.json(
-      { data: station } satisfies ApiResponse,
+      { data: { ...station, fuels: finalFuels } } satisfies ApiResponse,
       { status: 201 }
     );
-  } catch (err) {
+  } catch (err: any) {
     console.error("[POST /api/stations]", err);
-    return Response.json({ error: "เกิดข้อผิดพลาด กรุณาลองใหม่" } satisfies ApiResponse, { status: 500 });
+    return Response.json({ error: err.message || "เกิดข้อผิดพลาด กรุณาลองใหม่" } satisfies ApiResponse, { status: 500 });
   }
 }

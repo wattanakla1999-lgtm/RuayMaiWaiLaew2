@@ -1,6 +1,6 @@
 import { type NextRequest } from "next/server";
+import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabase";
-import { prisma } from "@/lib/prisma";
 import type { ApiResponse } from "@/types";
 
 export async function POST(request: NextRequest): Promise<Response> {
@@ -34,18 +34,17 @@ export async function POST(request: NextRequest): Promise<Response> {
       return Response.json({ error: authError?.message || "สมัครสมาชิกผ่านระบบล้มเหลว" } satisfies ApiResponse, { status: 400 });
     }
 
-    // 2. Synchronize to Prisma
-    await prisma.user.upsert({
-      where: { email: authData.user.email! },
-      create: {
+    // 2. Synchronize to Supabase Table
+    await admin
+      .from('User')
+      .upsert({
+        id: authData.user.id,
         email: authData.user.email!,
         name: name || null,
-        role: "USER",
-      },
-      update: {
-        name: name || undefined,
-      },
-    });
+        role: "USER" as any,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }, { onConflict: 'email' });
 
     return Response.json({ data: { success: true } } satisfies ApiResponse, { status: 201 });
   } catch (err) {

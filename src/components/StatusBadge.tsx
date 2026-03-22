@@ -1,4 +1,4 @@
-import type { FuelStatus } from "@/generated/prisma";
+import type { FuelStatus } from "@/types";
 
 const CONFIG: Record<FuelStatus, { label: string; bg: string; dot: string; border: string; text: string }> = {
   AVAILABLE: {

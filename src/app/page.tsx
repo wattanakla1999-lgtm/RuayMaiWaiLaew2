@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase";
 
 // บังคับให้หน้านี้เป็น Dynamic ไม่ต้อง Cache เพื่อให้ข้อมูลอัปเดตเสมอ
 export const dynamic = "force-dynamic";
@@ -8,10 +8,15 @@ export default async function LandingPage() {
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
-  const [totalStations, updatesToday, totalUsers] = await Promise.all([
-    prisma.station.count({ where: { status: "ACTIVE" } }),
-    prisma.fuelStatusLog.count({ where: { createdAt: { gte: startOfToday } } }),
-    prisma.user.count(),
+  const supabase = supabaseAdmin();
+  const [
+    { count: totalStations },
+    { count: updatesToday },
+    { count: totalUsers }
+  ] = await Promise.all([
+    supabase.from('Station').select('*', { count: 'exact', head: true }).eq('status', 'ACTIVE'),
+    supabase.from('FuelStatusLog').select('*', { count: 'exact', head: true }).gte('createdAt', startOfToday.toISOString()),
+    supabase.from('User').select('*', { count: 'exact', head: true }),
   ]);
 
   return (
@@ -46,7 +51,7 @@ export default async function LandingPage() {
           </div>
           <h2 className="text-2xl font-black text-[#1A1C1E] mb-2 tracking-tight">ค้นหาน้ำมัน</h2>
           <p className="text-[#5E6266] text-[15px] font-medium leading-relaxed mb-8 pr-12">
-            ค้นหาปั๊มน้ำมันใกล้เคียงด้วยพิกัด GPS ที่แม่นยำของคุณ
+            ค้นหาปั๊มน้ำมันใกล้เคียง
           </p>
           <Link
             href="/map"
@@ -80,7 +85,7 @@ export default async function LandingPage() {
           <div className="grid grid-cols-3 gap-3">
             {/* Active Stations */}
             <div className="bg-[#F0F2F3] rounded-[1.5rem] p-5 text-left flex flex-col justify-center">
-              <p className="text-[32px] font-black text-[#1A513E] mb-2 leading-none">{totalStations > 0 ? `${totalStations}+` : "0"}</p>
+              <p className="text-[32px] font-black text-[#1A513E] mb-2 leading-none">{(totalStations ?? 0) > 0 ? `${totalStations}+` : "0"}</p>
               <p className="text-[10px] font-black text-[#5E6266] opacity-80 leading-[1.2] tracking-wide">ปั๊มที่<br />เปิดอยู่</p>
             </div>
             {/* Updates Today */}
@@ -90,7 +95,7 @@ export default async function LandingPage() {
             </div>
             {/* Active Users */}
             <div className="bg-[#F0F2F3] rounded-[1.5rem] p-5 text-left flex flex-col justify-center">
-              <p className="text-[32px] font-black text-[#1A513E] mb-2 leading-none">{totalUsers > 0 ? `${totalUsers}+` : "0"}</p>
+              <p className="text-[32px] font-black text-[#1A513E] mb-2 leading-none">{(totalUsers ?? 0) > 0 ? `${totalUsers}+` : "0"}</p>
               <p className="text-[10px] font-black text-[#5E6266] opacity-80 leading-[1.2] tracking-wide">ผู้ใช้งาน<br />ในระบบ</p>
             </div>
           </div>
@@ -99,7 +104,7 @@ export default async function LandingPage() {
       </div>
       {/* Footer */}
       <footer className="relative text-center py-6 text-gray-400 text-xs font-medium">
-        ข้อมูลอัปเดตโดยชุมชน · รายงานสถานะได้ทันที
+        ข้อมูลอัปเดต · รายงานสถานะได้ทันที
       </footer>
     </main>
   );

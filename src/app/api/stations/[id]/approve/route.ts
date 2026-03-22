@@ -1,5 +1,5 @@
 import { type NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase";
 import { auth } from "@/lib/auth";
 import { ApproveStationSchema } from "@/lib/validations";
 import type { ApiResponse } from "@/types";
@@ -32,16 +32,29 @@ export async function PATCH(
   }
 
   try {
-    const station = await prisma.station.findUnique({ where: { id } });
-    if (!station) {
+    const supabase = supabaseAdmin();
+    const { data: station, error: findError } = await supabase
+      .from('Station')
+      .select()
+      .eq('id', id)
+      .single();
+
+    if (findError || !station) {
       return Response.json({ error: "ไม่พบปั๊มน้ำมัน" } satisfies ApiResponse, { status: 404 });
     }
 
     const newStatus = parsed.data.action === "APPROVE" ? "ACTIVE" : "REJECTED";
-    const updated = await prisma.station.update({
-      where: { id },
-      data: { status: newStatus },
-    });
+    const { data: updated, error: updateError } = await supabase
+      .from('Station')
+      .update({ 
+        status: newStatus,
+        updatedAt: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
 
     return Response.json({ data: updated } satisfies ApiResponse);
   } catch (err) {

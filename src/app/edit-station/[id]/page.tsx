@@ -43,7 +43,6 @@ export default function EditStationPage({ params }: { params: Promise<{ id: stri
 
   const [brandSelect, setBrandSelect] = useState("PTT");
   const [customBrand, setCustomBrand] = useState("");
-  const [imageBase64, setImageBase64] = useState("");
 
   const [selectedFuels, setSelectedFuels] = useState<FuelSelection[]>([]);
 
@@ -51,7 +50,6 @@ export default function EditStationPage({ params }: { params: Promise<{ id: stri
   const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     async function fetchStation() {
@@ -59,13 +57,13 @@ export default function EditStationPage({ params }: { params: Promise<{ id: stri
         const res = await fetch(`/api/stations/${id}`);
         const { data, error } = await res.json();
         if (!res.ok) throw new Error(error || "ไม่พบข้อมูลปั๊ม");
-        
+
         setName(data.name || "");
         setLat(data.lat);
         setLng(data.lng);
         setAddress(data.address || "");
         setPhone(data.phone || "");
-        
+
         const isPredefined = PREDEFINED_BRANDS.some(b => b.id === data.brand && b.id !== "OTHER");
         if (isPredefined) {
           setBrandSelect(data.brand);
@@ -73,8 +71,7 @@ export default function EditStationPage({ params }: { params: Promise<{ id: stri
           setBrandSelect("OTHER");
           setCustomBrand(data.brand || "");
         }
-        
-        if (data.image) setImageBase64(data.image);
+
         if (data.fuels) {
           setSelectedFuels(data.fuels.map((f: any) => ({
             fuelType: f.fuelType,
@@ -95,26 +92,6 @@ export default function EditStationPage({ params }: { params: Promise<{ id: stri
     setLng(newLng);
   }, []);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      setError("กรุณาอัปโหลดไฟล์รูปภาพเท่านั้น");
-      return;
-    }
-
-    if (file.size > 2 * 1024 * 1024) {
-      setError("ขนาดไฟล์รูปต้องไม่เกิน 2MB");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setImageBase64(event.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
 
   const toggleFuel = (fuelType: string) => {
     const exists = selectedFuels.find((f) => f.fuelType === fuelType);
@@ -144,7 +121,6 @@ export default function EditStationPage({ params }: { params: Promise<{ id: stri
     setError(null);
 
     const finalBrand = brandSelect === "OTHER" ? customBrand : brandSelect;
-    const finalImage = brandSelect === "OTHER" ? imageBase64 : undefined;
 
     try {
       const res = await fetch(`/api/stations/${id}`, {
@@ -157,7 +133,6 @@ export default function EditStationPage({ params }: { params: Promise<{ id: stri
           address: address || undefined,
           phone: phone || undefined,
           brand: finalBrand,
-          image: finalImage || undefined,
           fuels: selectedFuels.length > 0 ? selectedFuels : undefined
         }),
       });
@@ -253,42 +228,16 @@ export default function EditStationPage({ params }: { params: Promise<{ id: stri
                   <div className="p-5 bg-gray-50 border border-[#008952]/20 rounded-2xl space-y-4 animate-in fade-in slide-in-from-top-2">
                     <div>
                       <label className="block text-[10px] font-black text-gray-500 mb-2 uppercase tracking-widest" htmlFor="custom-brand">
-                        ระบุชื่อยี่ห้อ / ชื่อปั๊มส่วนตัว *
+                        ชื่อปั๊ม *
                       </label>
                       <input
                         id="custom-brand"
                         type="text"
                         value={customBrand}
                         onChange={(e) => setCustomBrand(e.target.value)}
-                        placeholder="เช่น ปั๊มลุงทศพร, ปั๊มชุมชนรักษ์ไทย"
+                        placeholder="ชื่อปั๊ม"
                         className="w-full bg-white border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#008952] transition-all shadow-sm"
                       />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-gray-500 mb-2 uppercase tracking-widest">
-                        อัปโหลดโลโก้ / รูปร้าน (ถ้ามี)
-                      </label>
-                      <div className="flex items-center gap-4">
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="bg-white hover:bg-gray-50 text-gray-700 text-xs px-4 py-2.5 rounded-xl font-black border border-gray-200 transition-all shadow-sm active:scale-95"
-                        >
-                          📸 เลือกรูปภาพ...
-                        </button>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          ref={fileInputRef}
-                          onChange={handleImageUpload}
-                        />
-                        {imageBase64 && (
-                          <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-[#008952] shadow-md shrink-0">
-                            <img src={imageBase64} alt="Preview" className="w-full h-full object-cover" />
-                          </div>
-                        )}
-                      </div>
                     </div>
                   </div>
                 )}
@@ -298,7 +247,7 @@ export default function EditStationPage({ params }: { params: Promise<{ id: stri
               <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm space-y-6">
                 <div>
                   <label className="block text-[10px] font-black text-gray-500 mb-2 uppercase tracking-widest" htmlFor="station-name">
-                    ชื่อสาขา / ชื่อจุดสังเกต *
+                    ชื่อสาขา *
                   </label>
                   <input
                     id="station-name"
@@ -307,7 +256,7 @@ export default function EditStationPage({ params }: { params: Promise<{ id: stri
                     onChange={(e) => setName(e.target.value)}
                     required={step === 1}
                     minLength={2}
-                    placeholder="เช่น สาขาลาดพร้าว 71"
+                    placeholder="ชื่อสาขา"
                     className="w-full bg-gray-50 border border-gray-100 text-gray-900 placeholder-gray-400 rounded-xl px-4 py-3.5 font-bold focus:outline-none focus:ring-2 focus:ring-[#008952] transition-all"
                   />
                 </div>
@@ -333,7 +282,7 @@ export default function EditStationPage({ params }: { params: Promise<{ id: stri
                     type="text"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    placeholder="เช่น 123 ถ.ลาดพร้าว แขวงจอมพล"
+                    placeholder="ที่อยู่"
                     className="w-full bg-gray-50 border border-gray-100 text-gray-900 placeholder-gray-400 rounded-xl px-4 py-3.5 font-bold focus:outline-none focus:ring-2 focus:ring-[#008952] transition-all"
                   />
                 </div>
@@ -347,7 +296,7 @@ export default function EditStationPage({ params }: { params: Promise<{ id: stri
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="เช่น 02-123-4567"
+                    placeholder="เบอร์โทรศัพท์"
                     className="w-full bg-gray-50 border border-gray-100 text-gray-900 placeholder-gray-400 rounded-xl px-4 py-3.5 font-bold focus:outline-none focus:ring-2 focus:ring-[#008952] transition-all"
                   />
                 </div>
@@ -421,15 +370,15 @@ export default function EditStationPage({ params }: { params: Promise<{ id: stri
               className="w-full bg-[#008952] hover:bg-[#007445] text-white font-black py-4 rounded-2xl transition-all disabled:opacity-50 active:scale-95 text-lg shadow-xl shadow-[#008952]/30 border border-[#008952]"
             >
               {loading ? (
-                 <span className="flex items-center justify-center gap-3">
-                   <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                   กำลังบันทึก...
-                 </span>
-               ) : step === 1 ? (
-                 "ขั้นตอนถัดไป →"
-               ) : (
-                 "✅ บันทึกข้อมูลปั๊ม"
-               )}
+                <span className="flex items-center justify-center gap-3">
+                  <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                  กำลังบันทึก...
+                </span>
+              ) : step === 1 ? (
+                "ขั้นตอนถัดไป →"
+              ) : (
+                "บันทึก"
+              )}
             </button>
           </div>
         </form>

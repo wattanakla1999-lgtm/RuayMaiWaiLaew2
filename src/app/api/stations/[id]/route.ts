@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import crypto from "crypto";
+import { supabaseAdmin } from "@/lib/supabase";
 
 export async function GET(
   req: Request,
@@ -7,17 +8,18 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const station = await prisma.station.findUnique({
-      where: { id },
-      include: {
-        fuels: true,
-      },
-    });
+    const supabase = supabaseAdmin();
+    const { data: station, error } = await supabase
+      .from('Station')
+      .select('*, fuels:StationFuel(*)')
+      .eq('id', id)
+      .single();
 
     if (!station) {
       return NextResponse.json({ error: "ไม่พบข้อมูลปั๊ม" }, { status: 404 });
     }
 
+    console.log(`[GET /api/stations/${id}] Found fuels:`, station.fuels?.length || 0);
     return NextResponse.json({ data: station });
   } catch (error: any) {
     return NextResponse.json({ error: "เกิดข้อผิดพลาดภายในเซิร์ฟเวอร์" }, { status: 500 });
@@ -33,17 +35,20 @@ export async function PUT(
     const body = await req.json();
     const { name, lat, lng, address, phone, brand, image, fuels } = body;
 
-    const existing = await prisma.station.findUnique({
-      where: { id },
-    });
+    const supabase = supabaseAdmin();
+    const { data: existing, error: findError } = await supabase
+      .from('Station')
+      .select()
+      .eq('id', id)
+      .single();
 
     if (!existing) {
       return NextResponse.json({ error: "ไม่พบข้อมูลปั๊ม" }, { status: 404 });
     }
 
-    const updated = await prisma.station.update({
-      where: { id },
-      data: {
+    const { data: updated, error: updateError } = await supabase
+      .from('Station')
+      .update({
         name,
         lat,
         lng,
@@ -51,29 +56,31 @@ export async function PUT(
         phone,
         brand,
         image,
-      },
-    });
+        updatedAt: new Date().toISOString(),
+      })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
 
     // Handle fuels update if provided
     if (fuels && Array.isArray(fuels)) {
       // Very simple strategy: delete existing and recreate
-      await prisma.fuelStatusLog.deleteMany({
-        where: { stationId: id }
-      });
-      await prisma.stationFuel.deleteMany({
-        where: { stationId: id }
-      });
+      await supabase.from('FuelStatusLog').delete().eq('stationId', id);
+      await supabase.from('StationFuel').delete().eq('stationId', id);
       
       const fuelData = fuels.map((f: any) => ({
+        id: crypto.randomUUID(),
         stationId: id,
         fuelType: f.fuelType,
         status: f.status,
+        updatedAt: new Date().toISOString(),
       }));
       
       if (fuelData.length > 0) {
-        await prisma.stationFuel.createMany({
-          data: fuelData
-        });
+        const { error: fuelsError } = await supabase.from('StationFuel').insert(fuelData);
+        if (fuelsError) throw fuelsError;
       }
     }
 

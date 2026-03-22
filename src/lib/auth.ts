@@ -2,7 +2,6 @@ import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import GoogleProvider from "next-auth/providers/google";
 import { supabaseAdmin } from "@/lib/supabase";
-import { prisma } from "@/lib/prisma";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -28,18 +27,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           if (error || !data.user) return null;
 
-          // Upsert user in Prisma
-          const user = await prisma.user.upsert({
-            where: { email: data.user.email! },
-            create: {
+          // Upsert user in Supabase
+          const { data: user, error: upsertError } = await admin
+            .from('User')
+            .upsert({
               email: data.user.email!,
               name: data.user.user_metadata?.name ?? null,
               image: data.user.user_metadata?.avatar_url ?? null,
-            },
-            update: {
-              name: data.user.user_metadata?.name ?? undefined,
-            },
-          });
+              updatedAt: new Date().toISOString(),
+            }, { onConflict: 'email' })
+            .select()
+            .single();
+
+          if (upsertError || !user) return null;
 
           return {
             id: user.id,
@@ -58,18 +58,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async signIn({ user, account }) {
       if (account?.provider === "google") {
         if (!user.email) return false;
-        await prisma.user.upsert({
-          where: { email: user.email },
-          create: {
+        const admin = supabaseAdmin();
+        
+        // Find existing user or generate new ID
+        const { data: dbUser } = await admin
+          .from('User')
+          .select('id')
+          .eq('email', user.email)
+          .maybeSingle();
+
+        await admin
+          .from('User')
+          .upsert({
+            id: dbUser?.id || crypto.randomUUID(),
             email: user.email,
             name: user.name ?? null,
             image: user.image ?? null,
-          },
-          update: {
-            name: user.name ?? undefined,
-            image: user.image ?? undefined,
-          },
-        });
+            updatedAt: new Date().toISOString(),
+            ...(dbUser ? {} : { createdAt: new Date().toISOString() }),
+          }, { onConflict: 'email' });
         return true;
       }
       return true;
@@ -77,7 +84,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user, account }) {
       if (user) {
         if (account?.provider === "google") {
-          const dbUser = await prisma.user.findUnique({ where: { email: user.email! } });
+          const admin = supabaseAdmin();
+          const { data: dbUser } = await admin
+            .from('User')
+            .select()
+            .eq('email', user.email!)
+            .single();
+            
           token.id = dbUser?.id || user.id;
           token.role = dbUser?.role || "USER";
         } else {

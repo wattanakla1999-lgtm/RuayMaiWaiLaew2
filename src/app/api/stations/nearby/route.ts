@@ -1,5 +1,6 @@
 import { type NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { supabaseAdmin } from "@/lib/supabase";
+import { auth } from "@/lib/auth";
 import { NearbyQuerySchema } from "@/lib/validations";
 import type { ApiResponse, StationWithDistance, FuelType } from "@/types";
 
@@ -46,54 +47,53 @@ export async function GET(request: NextRequest): Promise<Response> {
     const lngDelta = radius / (111 * Math.cos((lat * Math.PI) / 180));
 
     // Construct relational where clause based on filters
-    const fuelsWhere: any = {};
-    if (fuelStatus !== "ALL") fuelsWhere.status = fuelStatus;
-    if (fuelType !== "ALL") fuelsWhere.fuelType = fuelType;
+    const supabase = supabaseAdmin();
+    let query = supabase
+      .from('Station')
+      .select('*, owner:User(id, name), fuels:StationFuel(*)')
+      .eq('status', 'ACTIVE')
+      .gte('lat', lat - latDelta)
+      .lte('lat', lat + latDelta)
+      .gte('lng', lng - lngDelta)
+      .lte('lng', lng + lngDelta);
 
-    const stations = await prisma.station.findMany({
-      where: {
-        status: "ACTIVE",
-        ...(brand !== "ALL" ? { brand } : {}),
-        lat: { gte: lat - latDelta, lte: lat + latDelta },
-        lng: { gte: lng - lngDelta, lte: lng + lngDelta },
-        ...(Object.keys(fuelsWhere).length > 0
-          ? {
-              fuels: {
-                some: fuelsWhere,
-              },
-            }
-          : {}),
-      },
-      include: {
-        owner: { select: { id: true, name: true } },
-        fuels: true,
-      },
-    });
+    if (brand !== "ALL") {
+      query = query.eq('brand', brand);
+    }
+
+    // Filter by fuel status/type if requested
+    // Note: To filter stations by fuel properties in Supabase JS client, 
+    // it's often easier to do the specific filtering in JS downstream 
+    // unless using a complex RPC or !inner join which might hide some fuels.
+    // For now, we'll fetch then filter in JS to ensure the station object is complete.
+
+    const { data: stations, error: fetchError } = await query;
+    if (fetchError) throw fetchError;
 
     const now = Date.now();
 
-    const result: StationWithDistance[] = stations
+    const result: StationWithDistance[] = (stations as any[])
       .map((s) => {
         const dist = haversine(lat, lng, s.lat, s.lng);
-        const mappedFuels = s.fuels.map((f) => ({
+        const mappedFuels = (s.fuels as any[]).map((f) => ({
           ...f,
-          isStale: now - f.updatedAt.getTime() > FUEL_EXPIRE_MS,
+          isStale: now - new Date(f.updatedAt).getTime() > FUEL_EXPIRE_MS,
         }));
 
         // Compute summary status (same as /api/stations)
         let summaryStatus: "AVAILABLE" | "LOW" | "EMPTY" = "EMPTY";
-        if (s.fuels.some((f) => f.status === "AVAILABLE")) {
+        if (mappedFuels.some((f) => f.status === "AVAILABLE")) {
           summaryStatus = "AVAILABLE";
-        } else if (s.fuels.some((f) => f.status === "LOW")) {
+        } else if (mappedFuels.some((f) => f.status === "LOW")) {
           summaryStatus = "LOW";
         }
 
-        const latestUpdate = s.fuels.reduce(
-          (latest, f) => (f.updatedAt > latest ? f.updatedAt : latest),
+        const latestUpdate = mappedFuels.reduce(
+          (latest, f) => (new Date(f.updatedAt).getTime() > new Date(latest).getTime() ? f.updatedAt : latest),
           s.updatedAt
         );
 
-        const isStale = now - latestUpdate.getTime() > FUEL_EXPIRE_MS;
+        const isStale = now - new Date(latestUpdate).getTime() > FUEL_EXPIRE_MS;
         
         return { 
           ...s, 
@@ -104,7 +104,13 @@ export async function GET(request: NextRequest): Promise<Response> {
           fuels: mappedFuels 
         };
       })
-      .filter((s) => s.distance <= radius)
+      .filter((s) => {
+        // Apply fuel filters if they weren't fully applied in DB
+        const distanceMatch = s.distance <= radius;
+        const fuelStatusMatch = fuelStatus === "ALL" || s.fuels.some((f: any) => f.status === fuelStatus);
+        const fuelTypeMatch = fuelType === "ALL" || s.fuels.some((f: any) => f.fuelType === fuelType);
+        return distanceMatch && fuelStatusMatch && fuelTypeMatch;
+      })
       .sort((a: StationWithDistance, b: StationWithDistance) => a.distance - b.distance);
 
     return Response.json({ data: result } satisfies ApiResponse);

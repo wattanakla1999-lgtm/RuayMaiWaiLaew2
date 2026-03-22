@@ -41,14 +41,12 @@ export default function AddStationPage() {
 
   const [brandSelect, setBrandSelect] = useState("PTT");
   const [customBrand, setCustomBrand] = useState("");
-  const [imageBase64, setImageBase64] = useState("");
 
   const [selectedFuels, setSelectedFuels] = useState<FuelSelection[]>([]);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Get User Location on Mount
   useEffect(() => {
@@ -69,26 +67,6 @@ export default function AddStationPage() {
     setLng(newLng);
   }, []);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      setError("กรุณาอัปโหลดไฟล์รูปภาพเท่านั้น");
-      return;
-    }
-
-    if (file.size > 2 * 1024 * 1024) {
-      setError("ขนาดไฟล์รูปต้องไม่เกิน 2MB");
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setImageBase64(event.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-  };
 
   const toggleFuel = (fuelType: string) => {
     const exists = selectedFuels.find((f) => f.fuelType === fuelType);
@@ -118,9 +96,10 @@ export default function AddStationPage() {
     setError(null);
 
     const finalBrand = brandSelect === "OTHER" ? customBrand : brandSelect;
-    const finalImage = brandSelect === "OTHER" ? imageBase64 : undefined;
 
     try {
+      console.log("[AddStation] Submitting:", { name, finalBrand, selectedFuels });
+
       const res = await fetch("/api/stations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -131,7 +110,6 @@ export default function AddStationPage() {
           address: address || undefined,
           phone: phone || undefined,
           brand: finalBrand,
-          image: finalImage || undefined,
           fuels: selectedFuels.length > 0 ? selectedFuels : undefined
         }),
       });
@@ -140,8 +118,8 @@ export default function AddStationPage() {
         throw new Error("เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองใหม่อีกครั้ง");
       }
 
-      // นำทางกลับไปหน้าแรกเมื่อสำเร็จ
-      router.push("/");
+      // นำทางกลับไปหน้า Dashboard เมื่อสำเร็จ
+      router.push("/dashboard");
     } catch (err: any) {
       setError(err.message || "เกิดข้อผิดพลาดในการส่งข้อมูล");
     } finally {
@@ -156,14 +134,14 @@ export default function AddStationPage() {
           <button
             type="button"
             onClick={() => step === 2 ? setStep(1) : router.push("/")}
-            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white hover:bg-slate-50 text-slate-400 hover:text-amber-600 transition-all border border-gray-200 shadow-sm group"
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white hover:bg-slate-50 text-slate-400 hover:text-[#008952] transition-all border border-gray-200 shadow-sm group"
           >
             <span className="group-hover:-translate-x-0.5 transition-transform text-xl font-black">←</span>
           </button>
 
           <div className="flex gap-2 items-center bg-gray-200/50 p-1.5 rounded-full px-3">
-            <div className={`h-2 w-8 rounded-full transition-all duration-500 ${step >= 1 ? "bg-amber-500 shadow-sm shadow-amber-500/20" : "bg-gray-300"}`} />
-            <div className={`h-2 w-8 rounded-full transition-all duration-500 ${step >= 2 ? "bg-amber-500 shadow-sm shadow-amber-500/20" : "bg-gray-300"}`} />
+            <div className={`h-2 w-8 rounded-full transition-all duration-500 ${step >= 1 ? "bg-[#008952] shadow-sm shadow-[#008952]/20" : "bg-gray-300"}`} />
+            <div className={`h-2 w-8 rounded-full transition-all duration-500 ${step >= 2 ? "bg-[#008952] shadow-sm shadow-[#008952]/20" : "bg-gray-300"}`} />
           </div>
         </div>
 
@@ -173,20 +151,11 @@ export default function AddStationPage() {
           </h1>
           <p className="text-gray-500 text-sm font-medium leading-relaxed">
             {step === 1
-              ? "ปั๊มจะต้องผ่านการอนุมัติจาก Admin ก่อนแสดงในแผนที่"
+              ? "กรอกข้อมูลปั๊มน้ำมันให้ครบถ้วนเพื่อแบ่งปันข้อมูลที่มีประโยชน์"
               : "เลือกน้ำมันที่มีจำหน่ายในปั๊มนี้ เพื่อเป็นข้อมูลเบื้องต้น"}
           </p>
         </div>
 
-        {step === 1 && (
-          <div className="flex items-start gap-4 bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-8 shadow-sm">
-            <span className="text-2xl">⏳</span>
-            <div>
-              <p className="text-amber-800 font-black text-sm uppercase tracking-widest">รอการตรวจสอบ</p>
-              <p className="text-amber-700/80 text-xs mt-1 font-medium">ทีมงานจะตรวจสอบข้อมูลและอนุมัติภายใน 24 ชั่วโมง</p>
-            </div>
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
           <div className={step === 1 ? "block" : "hidden"}>
@@ -207,8 +176,8 @@ export default function AddStationPage() {
                         setError(null);
                       }}
                       className={`relative flex flex-col items-center justify-center p-4 rounded-2xl border transition-all overflow-hidden ${brandSelect === b.id
-                        ? "bg-amber-50 border-amber-500 text-amber-700 shadow-md ring-1 ring-amber-500 scale-[1.05]"
-                        : "bg-gray-50 border-gray-100 text-gray-400 hover:border-amber-200 hover:bg-white"
+                        ? "bg-[#F8FAF9] border-[#008952] text-[#008952] shadow-md ring-1 ring-[#008952] scale-[1.05]"
+                        : "bg-gray-50 border-gray-100 text-gray-400 hover:border-[#008952]/30 hover:bg-white"
                         }`}
                     >
                       {b.id === "OTHER" ? (
@@ -233,45 +202,19 @@ export default function AddStationPage() {
                 </div>
 
                 {brandSelect === "OTHER" && (
-                  <div className="p-5 bg-gray-50 border border-amber-200 rounded-2xl space-y-4 animate-in fade-in slide-in-from-top-2">
+                  <div className="p-5 bg-gray-50 border border-[#008952]/20 rounded-2xl space-y-4 animate-in fade-in slide-in-from-top-2">
                     <div>
                       <label className="block text-[10px] font-black text-gray-500 mb-2 uppercase tracking-widest" htmlFor="custom-brand">
-                        ระบุชื่อยี่ห้อ / ชื่อปั๊มส่วนตัว *
+                        ชื่อปั๊ม *
                       </label>
                       <input
                         id="custom-brand"
                         type="text"
                         value={customBrand}
                         onChange={(e) => setCustomBrand(e.target.value)}
-                        placeholder="เช่น ปั๊มลุงทศพร, ปั๊มชุมชนรักษ์ไทย"
-                        className="w-full bg-white border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all shadow-sm"
+                        placeholder="ชื่อปั๊ม"
+                        className="w-full bg-white border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#008952] transition-all shadow-sm"
                       />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-black text-gray-500 mb-2 uppercase tracking-widest">
-                        อัปโหลดโลโก้ / รูปร้าน (ถ้ามี)
-                      </label>
-                      <div className="flex items-center gap-4">
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="bg-white hover:bg-gray-50 text-gray-700 text-xs px-4 py-2.5 rounded-xl font-black border border-gray-200 transition-all shadow-sm active:scale-95"
-                        >
-                          📸 เลือกรูปภาพ...
-                        </button>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          ref={fileInputRef}
-                          onChange={handleImageUpload}
-                        />
-                        {imageBase64 && (
-                          <div className="w-12 h-12 rounded-xl overflow-hidden border-2 border-amber-500 shadow-md shrink-0">
-                            <img src={imageBase64} alt="Preview" className="w-full h-full object-cover" />
-                          </div>
-                        )}
-                      </div>
                     </div>
                   </div>
                 )}
@@ -281,7 +224,7 @@ export default function AddStationPage() {
               <div className="bg-white p-6 rounded-3xl border border-gray-200 shadow-sm space-y-6">
                 <div>
                   <label className="block text-[10px] font-black text-gray-500 mb-2 uppercase tracking-widest" htmlFor="station-name">
-                    ชื่อสาขา / ชื่อจุดสังเกต *
+                    ชื่อสาขา *
                   </label>
                   <input
                     id="station-name"
@@ -290,8 +233,8 @@ export default function AddStationPage() {
                     onChange={(e) => setName(e.target.value)}
                     required={step === 1}
                     minLength={2}
-                    placeholder="เช่น สาขาลาดพร้าว 71"
-                    className="w-full bg-gray-50 border border-gray-100 text-gray-900 placeholder-gray-400 rounded-xl px-4 py-3.5 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
+                    placeholder="ชื่อสาขา"
+                    className="w-full bg-gray-50 border border-gray-100 text-gray-900 placeholder-gray-400 rounded-xl px-4 py-3.5 font-bold focus:outline-none focus:ring-2 focus:ring-[#008952] transition-all"
                   />
                 </div>
 
@@ -316,8 +259,8 @@ export default function AddStationPage() {
                     type="text"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    placeholder="เช่น 123 ถ.ลาดพร้าว แขวงจอมพล"
-                    className="w-full bg-gray-50 border border-gray-100 text-gray-900 placeholder-gray-400 rounded-xl px-4 py-3.5 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
+                    placeholder="ที่อยู่"
+                    className="w-full bg-gray-50 border border-gray-100 text-gray-900 placeholder-gray-400 rounded-xl px-4 py-3.5 font-bold focus:outline-none focus:ring-2 focus:ring-[#008952] transition-all"
                   />
                 </div>
 
@@ -330,8 +273,8 @@ export default function AddStationPage() {
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="เช่น 02-123-4567"
-                    className="w-full bg-gray-50 border border-gray-100 text-gray-900 placeholder-gray-400 rounded-xl px-4 py-3.5 font-bold focus:outline-none focus:ring-2 focus:ring-amber-500 transition-all"
+                    placeholder="เบอร์โทรศัพท์"
+                    className="w-full bg-gray-50 border border-gray-100 text-gray-900 placeholder-gray-400 rounded-xl px-4 py-3.5 font-bold focus:outline-none focus:ring-2 focus:ring-[#008952] transition-all"
                   />
                 </div>
               </div>
@@ -349,31 +292,31 @@ export default function AddStationPage() {
                     return (
                       <div
                         key={fuel}
-                        className={`flex flex-col p-5 rounded-2xl border transition-all duration-300 ${isSelected ? "bg-amber-50 border-amber-300 shadow-sm" : "bg-gray-50 border-gray-100 hover:border-amber-200"
+                        className={`flex flex-col p-5 rounded-2xl border transition-all duration-300 ${isSelected ? "bg-[#F8FAF9] border-[#008952]/30 shadow-sm" : "bg-gray-50 border-gray-100 hover:border-[#008952]/30"
                           }`}
                       >
                         <div
                           className="flex items-center gap-4 cursor-pointer mb-4"
                           onClick={() => toggleFuel(fuel)}
                         >
-                          <div className={`w-6 h-6 rounded-lg flex items-center justify-center border-2 transition-all shrink-0 ${isSelected ? "bg-amber-500 border-amber-600 text-black shadow-sm" : "bg-white border-gray-200"
+                          <div className={`w-6 h-6 rounded-lg flex items-center justify-center border-2 transition-all shrink-0 ${isSelected ? "bg-[#008952] border-[#008952] text-white shadow-sm" : "bg-white border-gray-200"
                             }`}>
                             {isSelected && <span className="text-sm font-black">✓</span>}
                           </div>
-                          <span className={`font-black text-base tracking-tight ${isSelected ? "text-amber-800" : "text-gray-500"}`}>
+                          <span className={`font-black text-base tracking-tight ${isSelected ? "text-[#008952]" : "text-gray-500"}`}>
                             {FUEL_TYPE_LABELS[fuel as keyof typeof FUEL_TYPE_LABELS]}
                           </span>
                         </div>
 
                         {isSelected && (
-                          <div className="flex items-center gap-1.5 p-1.5 bg-white/50 backdrop-blur-sm rounded-xl border border-amber-200/50">
+                          <div className="flex items-center gap-1.5 p-1.5 bg-white/50 backdrop-blur-sm rounded-xl border border-[#008952]/10">
                             {(["AVAILABLE", "LOW", "EMPTY"] as const).map(s => (
                               <button
                                 key={s}
                                 type="button"
                                 onClick={() => updateFuelStatus(fuel, s)}
                                 className={`flex-1 py-2.5 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${sel?.status === s
-                                  ? (s === "AVAILABLE" ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20" : s === "LOW" ? "bg-amber-500 text-black shadow-md shadow-amber-500/20" : "bg-red-500 text-white shadow-md shadow-red-500/20")
+                                  ? (s === "AVAILABLE" ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20" : s === "LOW" ? "bg-amber-500 text-white shadow-md shadow-amber-500/20" : "bg-red-500 text-white shadow-md shadow-red-500/20")
                                   : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                                   }`}
                               >
@@ -389,7 +332,7 @@ export default function AddStationPage() {
               </div>
             </div>
             {selectedFuels.length === 0 && (
-              <p className="text-amber-600 font-bold text-xs text-center mt-4">
+              <p className="text-[#008952] font-bold text-xs text-center mt-4">
                 * หากไม่เลือกน้ำมันเลย จะถือว่าไม่มีข้อมูลเบื้องต้นแสดง
               </p>
             )}
@@ -406,7 +349,7 @@ export default function AddStationPage() {
               id="add-station-submit"
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-br from-amber-400 to-amber-600 hover:from-amber-300 hover:to-amber-500 text-black font-black py-4 rounded-2xl transition-all disabled:opacity-50 active:scale-95 text-lg shadow-xl shadow-amber-500/30 border border-amber-400/50"
+              className="w-full bg-[#008952] hover:bg-[#007445] text-white font-black py-4 rounded-2xl transition-all disabled:opacity-50 active:scale-95 text-lg shadow-xl shadow-[#008952]/20"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-3">
@@ -416,7 +359,7 @@ export default function AddStationPage() {
               ) : step === 1 ? (
                 "ขั้นตอนถัดไป →"
               ) : (
-                "✅ ยืนยันส่งข้อมูลปั๊ม"
+                "ยืนยัน"
               )}
             </button>
           </div>

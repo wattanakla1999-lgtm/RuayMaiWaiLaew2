@@ -1,5 +1,6 @@
 import { type NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
+import crypto from "crypto";
+import { supabaseAdmin } from "@/lib/supabase";
 import { CreateReportSchema } from "@/lib/validations";
 
 export async function POST(request: NextRequest): Promise<Response> {
@@ -12,36 +13,65 @@ export async function POST(request: NextRequest): Promise<Response> {
 
     const { stationId, fuelStatus, fuelType } = parsed.data;
 
-    const station = await prisma.station.findUnique({ where: { id: stationId } });
-    if (!station) {
+    const supabase = supabaseAdmin();
+    const { data: station, error: findError } = await supabase
+      .from('Station')
+      .select()
+      .eq('id', stationId)
+      .single();
+
+    if (findError || !station) {
       return Response.json({ error: "ไม่พบปั๊มน้ำมัน" }, { status: 404 });
     }
 
     const ip = request.headers.get("x-forwarded-for") ?? "unknown";
 
     // Rate limiting: 1 report per IP per station per fuel per 5 minutes
-    const fiveMinsAgo = new Date(Date.now() - 5 * 60 * 1000);
-    const recentReport = await prisma.fuelReport.findFirst({
-      where: { stationId, ip, fuelType: fuelType as any, createdAt: { gte: fiveMinsAgo } },
-    });
+    const fiveMinsAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const { data: recentReport } = await supabase
+      .from('FuelReport')
+      .select()
+      .eq('stationId', stationId)
+      .eq('ip', ip)
+      .eq('fuelType', fuelType as any)
+      .gte('createdAt', fiveMinsAgo)
+      .maybeSingle();
 
     if (recentReport) {
       return Response.json({ error: "คุณรายงานไปแล้ว กรุณารอสักครู่" }, { status: 429 });
     }
 
-    await prisma.$transaction([
-      prisma.fuelReport.create({
-        data: { stationId, fuelStatus, fuelType: fuelType as any, ip },
-      }),
-      prisma.stationFuel.upsert({
-        where: { stationId_fuelType: { stationId, fuelType: fuelType as any } },
-        update: { status: fuelStatus, updatedAt: new Date() },
-        create: { stationId, fuelType: fuelType as any, status: fuelStatus },
-      }),
-      prisma.fuelStatusLog.create({
-        data: { stationId, fuelStatus, fuelType: fuelType as any, note: "User reported" },
-      })
-    ]);
+    await supabase
+      .from('FuelReport')
+      .insert({ 
+        id: crypto.randomUUID(), 
+        stationId, 
+        fuelStatus, 
+        fuelType: fuelType as any, 
+        ip,
+        createdAt: new Date().toISOString()
+      });
+
+    await supabase
+      .from('StationFuel')
+      .upsert({ 
+        id: crypto.randomUUID(),
+        stationId, 
+        fuelType: fuelType as any, 
+        status: fuelStatus,
+        updatedAt: new Date().toISOString() 
+      }, { onConflict: 'stationId,fuelType' });
+
+    await supabase
+      .from('FuelStatusLog')
+      .insert({ 
+        id: crypto.randomUUID(), 
+        stationId, 
+        fuelStatus, 
+        fuelType: fuelType as any, 
+        note: "User reported",
+        createdAt: new Date().toISOString()
+      });
 
     return Response.json({ success: true });
   } catch (err) {
