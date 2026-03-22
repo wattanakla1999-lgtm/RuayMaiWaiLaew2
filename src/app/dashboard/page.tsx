@@ -23,6 +23,8 @@ export default function DashboardPage() {
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [restockModal, setRestockModal] = useState<{ isOpen: boolean; stationId: string; fuelType: string } | null>(null);
   const [showSignOutModal, setShowSignOutModal] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [restockDate, setRestockDate] = useState("");
 
   useEffect(() => {
@@ -112,14 +114,70 @@ export default function DashboardPage() {
               {/* <p className="text-[10px] font-bold text-[#008952] uppercase tracking-[0.2em] mt-1 opacity-70">ศูนย์รวมเจ้าของปั๊ม</p> */}
             </div>
           </div>
-          <button
-            id="signout-btn"
-            onClick={() => setShowSignOutModal(true)}
-            className="w-10 h-10 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all active:scale-90 border border-transparent hover:border-red-100"
-            title="ออกจากระบบ"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-          </button>
+          <div className="relative">
+            <button
+              id="profile-dropdown-btn"
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-100 overflow-hidden hover:border-[#008952]/30 transition-all p-0.5"
+            >
+              {session?.user?.image ? (
+                <img src={session.user.image} alt={session.user.name || "User"} className="w-full h-full object-cover rounded-lg" />
+              ) : (
+                <div className="w-full h-full bg-[#008952]/10 text-[#008952] flex items-center justify-center rounded-lg">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                </div>
+              )}
+            </button>
+
+            {/* Profile Dropdown Menu */}
+            {showProfileMenu && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowProfileMenu(false)}
+                />
+                <div className="absolute right-0 mt-3 w-64 bg-white rounded-3xl shadow-2xl border border-slate-100 z-50 p-6 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="flex items-center gap-4 mb-6 pb-6 border-b border-slate-50">
+                    <div className="w-12 h-12 rounded-2xl bg-[#008952]/10 flex items-center justify-center text-[#008952] overflow-hidden shrink-0">
+                      {session?.user?.image ? (
+                        <img src={session.user.image} alt="User" className="w-full h-full object-cover" />
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                      )}
+                    </div>
+                    <div className="overflow-hidden">
+                      <p className="font-black text-slate-900 truncate tracking-tight">{session?.user?.name || "ผู้ใช้งาน"}</p>
+                      <p className="text-[10px] font-bold text-slate-400 truncate uppercase mt-0.5">{session?.user?.email}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <button
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-600 hover:bg-[#F8FAF9] hover:text-[#008952] transition-all font-bold text-sm text-left group"
+                      onClick={() => {
+                        setShowProfileMenu(false);
+                        setShowProfileModal(true);
+                      }}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-50 group-hover:opacity-100 transition-opacity"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                      ดูโปรไฟล์
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setShowProfileMenu(false);
+                        setShowSignOutModal(true);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-red-500 hover:bg-red-50 transition-all font-bold text-sm text-left group"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                      ออกจากระบบ
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </header>
 
@@ -321,6 +379,61 @@ export default function DashboardPage() {
                 className="w-full py-4 rounded-[1.5rem] text-sm font-black text-slate-400 hover:bg-slate-50 transition-all active:scale-95 uppercase tracking-[0.1em]"
               >
                 ยกเลิก
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showProfileModal && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-slate-900/60 backdrop-blur-3xl animate-in fade-in duration-300">
+          <div className="bg-white rounded-[3rem] p-10 max-w-sm w-full shadow-3xl animate-in zoom-in-95 duration-500 border border-white relative overflow-hidden">
+            {/* Background Accent */}
+            <div className="absolute top-0 left-0 w-full h-32 bg-slate-50 border-b border-slate-100 -z-10" />
+
+            <button
+              onClick={() => setShowProfileModal(false)}
+              className="absolute top-6 right-6 w-10 h-10 rounded-full bg-white shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 hover:text-slate-600 transition-all hover:rotate-90"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+
+            <div className="flex flex-col items-center text-center mt-4">
+              <div className="w-24 h-24 rounded-[2.5rem] bg-white p-2 shadow-2xl shadow-slate-200 border border-slate-50 mb-6">
+                <div className="w-full h-full rounded-[2rem] bg-[#008952]/10 flex items-center justify-center text-[#008952] overflow-hidden">
+                  {session?.user?.image ? (
+                    <img src={session.user.image} alt="User" className="w-full h-full object-cover" />
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                  )}
+                </div>
+              </div>
+
+              <h3 className="text-3xl font-black text-slate-900 mb-1 tracking-tighter uppercase">{session?.user?.name || "ผู้ใช้งาน"}</h3>
+              <p className="text-sm font-bold text-[#008952] uppercase tracking-[0.2em] mb-8 opacity-70">
+                {(session?.user as any)?.role || "เจ้าของปั๊ม"}
+              </p>
+
+              <div className="w-full space-y-4 text-left">
+                <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                  <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1.5">อีเมลผู้ใช้งาน</p>
+                  <p className="font-bold text-slate-800 break-all">{session?.user?.email}</p>
+                </div>
+
+                {/* <div className="bg-emerald-50/30 rounded-2xl p-5 border border-emerald-100/50">
+                  <p className="text-[10px] font-black text-emerald-300 uppercase tracking-widest mb-1.5">สถานะบัญชี</p>
+                  <p className="font-bold text-[#008952] flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#008952] animate-pulse" />
+                    ยืนยันตัวตนเรียบร้อย
+                  </p>
+                </div> */}
+              </div>
+
+              <button
+                onClick={() => setShowProfileModal(false)}
+                className="w-full mt-10 py-5 rounded-2xl bg-slate-900 text-white font-black hover:bg-slate-800 transition-all active:scale-95 uppercase tracking-widest shadow-xl shadow-slate-200"
+              >
+                ปิดหน้าต่าง
               </button>
             </div>
           </div>
