@@ -56,12 +56,6 @@ export default function AuthPage() {
             <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">สำหรับเจ้าของปั๊ม</p>
           </div>
 
-          {isRegistered && (
-            <div className="mb-6 bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold px-5 py-4 rounded-2xl animate-in fade-in slide-in-from-top-4">
-              ✅ สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบด้วยอีเมลและรหัสผ่านของคุณ
-            </div>
-          )}
-
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-[10px] font-black text-slate-300 uppercase tracking-widest mb-3 px-1" htmlFor="email">
@@ -73,7 +67,7 @@ export default function AuthPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                placeholder="ชื่อ@ตัวอย่าง.com"
+                placeholder="อีเมลผู้ใช้งาน"
                 className="w-full bg-slate-50 border border-slate-100 text-slate-900 placeholder-slate-300 rounded-[1.5rem] px-6 py-4 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold"
               />
             </div>

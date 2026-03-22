@@ -42,7 +42,6 @@ export default function EditStationPage({ params }: { params: Promise<{ id: stri
   const [phone, setPhone] = useState("");
 
   const [brandSelect, setBrandSelect] = useState("PTT");
-  const [customBrand, setCustomBrand] = useState("");
 
   const [selectedFuels, setSelectedFuels] = useState<FuelSelection[]>([]);
 
@@ -69,7 +68,6 @@ export default function EditStationPage({ params }: { params: Promise<{ id: stri
           setBrandSelect(data.brand);
         } else {
           setBrandSelect("OTHER");
-          setCustomBrand(data.brand || "");
         }
 
         if (data.fuels) {
@@ -109,10 +107,6 @@ export default function EditStationPage({ params }: { params: Promise<{ id: stri
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (step === 1) {
-      if (brandSelect === "OTHER" && !customBrand.trim()) {
-        setError("กรุณาระบุยี่ห้อหรือชื่อปั๊มส่วนตัวด้วยครับ");
-        return;
-      }
       setStep(2);
       return;
     }
@@ -120,7 +114,7 @@ export default function EditStationPage({ params }: { params: Promise<{ id: stri
     setLoading(true);
     setError(null);
 
-    const finalBrand = brandSelect === "OTHER" ? customBrand : brandSelect;
+    const finalBrand = brandSelect === "OTHER" ? "ปั๊มส่วนตัว" : brandSelect;
 
     try {
       const res = await fetch(`/api/stations/${id}`, {
@@ -223,24 +217,6 @@ export default function EditStationPage({ params }: { params: Promise<{ id: stri
                     </button>
                   ))}
                 </div>
-
-                {brandSelect === "OTHER" && (
-                  <div className="p-5 bg-gray-50 border border-[#008952]/20 rounded-2xl space-y-4 animate-in fade-in slide-in-from-top-2">
-                    <div>
-                      <label className="block text-[10px] font-black text-gray-500 mb-2 uppercase tracking-widest" htmlFor="custom-brand">
-                        ชื่อปั๊ม *
-                      </label>
-                      <input
-                        id="custom-brand"
-                        type="text"
-                        value={customBrand}
-                        onChange={(e) => setCustomBrand(e.target.value)}
-                        placeholder="ชื่อปั๊ม"
-                        className="w-full bg-white border border-gray-200 text-gray-900 placeholder-gray-400 rounded-xl px-4 py-3 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-[#008952] transition-all shadow-sm"
-                      />
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* Basic Info */}

@@ -77,7 +77,7 @@ export default function RegisterPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
-                placeholder="สมหมาย ใจดี"
+                placeholder="ชื่อ-นามสกุล / ชื่อปั๊ม"
                 className="w-full bg-slate-50 border border-slate-100 text-slate-900 placeholder-slate-300 rounded-[1.5rem] px-6 py-4 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold"
               />
             </div>
@@ -91,7 +91,7 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                placeholder="you@example.com"
+                placeholder="อีเมลผู้ใช้งาน"
                 className="w-full bg-slate-50 border border-slate-100 text-slate-900 placeholder-slate-300 rounded-[1.5rem] px-6 py-4 focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold"
               />
             </div>
