@@ -24,18 +24,22 @@ export default async function LandingPage() {
       <div className="w-full max-w-md space-y-5">
 
         {/* Hero Section */}
-        {/* <section className="bg-[#F4F5F6] rounded-[2rem] p-10 text-center space-y-4 shadow-sm">
-          <div className="inline-flex items-center gap-2 bg-[#F1E9D2] px-4 py-2 rounded-full text-[10px] font-black tracking-widest text-[#9C7C3E] shadow-sm uppercase">
-            <span className="text-[#9C7C3E] text-[10px] leading-none">▲</span>
-            สถานการณ์น้ำมันขาดแคลน
+        <section className="bg-[#F4F5F6] rounded-[3rem] p-10 text-center space-y-6 shadow-sm border border-gray-100 flex flex-col items-center">
+          <div className="w-24 h-24 rounded-3xl overflow-hidden shadow-2xl shadow-[#008952]/20 border-4 border-white transform hover:scale-105 transition-transform duration-500">
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
           </div>
-          <h1 className="text-4xl font-black text-[#1A1C1E] tracking-tight pt-2 pb-1 leading-tight">
-            รวยไม่ไหวแล้ว
-          </h1>
-          <p className="text-[#5E6266] text-[15px] font-medium leading-relaxed px-4">
-            ข้อมูลน้ำมันแบบเรียลไทม์สำหรับ<br />นักเดินทางสมัยใหม่
-          </p>
-        </section> */}
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 bg-[#F1E9D2] px-4 py-2 rounded-full text-[10px] font-black tracking-widest text-[#9C7C3E] shadow-sm uppercase">
+              สถานการณ์น้ำมันขาดแคลน
+            </div>
+            <h1 className="text-4xl font-black text-[#1A1C1E] tracking-tight pt-2 leading-tight">
+              รวยไม่ไหวแล้ว
+            </h1>
+            <p className="text-[#5E6266] text-sm font-medium leading-relaxed px-4 opacity-80">
+              ข้อมูลน้ำมันแบบเรียลไทม์สำหรับนักเดินทางสมัยใหม่
+            </p>
+          </div>
+        </section>
 
         {/* Find Fuel Card */}
         <section className="bg-white rounded-[2rem] p-8 shadow-sm relative overflow-hidden">
