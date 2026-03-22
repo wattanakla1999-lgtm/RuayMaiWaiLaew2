@@ -330,7 +330,7 @@ export default function MapPage() {
                   </div>
                   {station.fuelUpdatedAt && (
                     <span suppressHydrationWarning className="text-[9px] text-gray-400 font-black uppercase tracking-widest bg-gray-50 border border-gray-100 px-1.5 py-0.5 rounded">
-                      {new Date(station.fuelUpdatedAt).toLocaleString("th-TH", { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false })} น.
+                      {new Date(station.fuelUpdatedAt).toLocaleString("th-TH", { timeZone: "Asia/Bangkok", day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false })} น.
                     </span>
                   )}
                   {station.fuels?.some(f => f.status === "EMPTY" && f.restockEstimate) && (
@@ -338,7 +338,7 @@ export default function MapPage() {
                       {station.fuels.filter(f => f.status === "EMPTY" && f.restockEstimate).map(f => (
                         <div key={f.id} className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-[#92400e]/80">
                           <span className="flex h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse" />
-                          คาดการณ์เติม: {f.fuelType} {new Date(f.restockEstimate!).toLocaleString("th-TH", { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false })} น.
+                          คาดการณ์เติม: {f.fuelType} {new Date(f.restockEstimate!).toLocaleString("th-TH", { timeZone: "Asia/Bangkok", day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false })} น.
                         </div>
                       ))}
                     </div>

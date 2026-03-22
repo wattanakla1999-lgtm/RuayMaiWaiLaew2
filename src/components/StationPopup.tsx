@@ -40,7 +40,7 @@ export function StationPopup({ station, onReportSuccess }: StationPopupProps) {
           </div>
           <span suppressHydrationWarning className="text-[9px] sm:text-[10px] text-gray-400 font-black uppercase tracking-widest bg-gray-50 px-2 py-0.5 rounded-md font-mono border border-gray-100">
             {station.fuelUpdatedAt
-              ? `อัปเดต ${new Date(station.fuelUpdatedAt).toLocaleString("th-TH", { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false })} น.`
+              ? `อัปเดต ${new Date(station.fuelUpdatedAt).toLocaleString("th-TH", { timeZone: "Asia/Bangkok", day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: false })} น.`
               : "ไม่มีข้อมูล"}
           </span>
         </div>
@@ -64,7 +64,7 @@ export function StationPopup({ station, onReportSuccess }: StationPopupProps) {
                   </span>
                   {f.status === "EMPTY" && f.restockEstimate && (
                     <div className="text-[8px] sm:text-[9px] font-black text-amber-700 whitespace-nowrap bg-amber-50 px-2 py-1 rounded-lg border border-amber-200 shadow-sm animate-pulse-subtle flex items-center gap-1">
-                      จะเติม: {new Date(f.restockEstimate).toLocaleString("th-TH", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false })} น.
+                      จะเติม: {new Date(f.restockEstimate).toLocaleString("th-TH", { timeZone: "Asia/Bangkok", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hour12: false })} น.
                     </div>
                   )}
                 </div>

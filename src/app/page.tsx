@@ -5,8 +5,10 @@ import { supabaseAdmin } from "@/lib/supabase";
 export const dynamic = "force-dynamic";
 
 export default async function LandingPage() {
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
+  // Calculate Start of Today in Asia/Bangkok timezone
+  const now = new Date();
+  const bangkokDateStr = now.toLocaleDateString("en-US", { timeZone: "Asia/Bangkok" });
+  const startOfToday = new Date(`${bangkokDateStr} 00:00:00+07:00`);
 
   const supabase = supabaseAdmin();
   const [

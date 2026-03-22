@@ -15,6 +15,7 @@ const AddStationMap = dynamic(
 interface FuelSelection {
   fuelType: string;
   status: "AVAILABLE" | "LOW" | "EMPTY";
+  restockEstimate?: string;
 }
 
 const ALL_FUELS = Object.keys(FUEL_TYPE_LABELS);
@@ -73,7 +74,10 @@ export default function EditStationPage({ params }: { params: Promise<{ id: stri
         if (data.fuels) {
           setSelectedFuels(data.fuels.map((f: any) => ({
             fuelType: f.fuelType,
-            status: f.status
+            status: f.status,
+            restockEstimate: f.restockEstimate 
+              ? new Date(f.restockEstimate).toLocaleString("sv-SE", { timeZone: "Asia/Bangkok" }).replace(" ", "T").slice(0, 16)
+              : undefined
           })));
         }
       } catch (err: any) {
@@ -100,8 +104,8 @@ export default function EditStationPage({ params }: { params: Promise<{ id: stri
     }
   };
 
-  const updateFuelStatus = (fuelType: string, status: "AVAILABLE" | "LOW" | "EMPTY") => {
-    setSelectedFuels(selectedFuels.map(f => f.fuelType === fuelType ? { ...f, status } : f));
+  const updateFuelStatus = (fuelType: string, status: "AVAILABLE" | "LOW" | "EMPTY", restockEstimate?: string) => {
+    setSelectedFuels(selectedFuels.map(f => f.fuelType === fuelType ? { ...f, status, restockEstimate: status === "EMPTY" ? (restockEstimate ?? f.restockEstimate) : undefined } : f));
   };
 
   async function handleSubmit(e: React.FormEvent) {
@@ -127,7 +131,10 @@ export default function EditStationPage({ params }: { params: Promise<{ id: stri
           address: address || undefined,
           phone: phone || undefined,
           brand: finalBrand,
-          fuels: selectedFuels.length > 0 ? selectedFuels : undefined
+          fuels: selectedFuels.length > 0 ? selectedFuels.map(f => ({
+            ...f,
+            restockEstimate: f.restockEstimate ? new Date(f.restockEstimate + ":00+07:00").toISOString() : undefined
+          })) : undefined
         }),
       });
 
@@ -322,6 +329,21 @@ export default function EditStationPage({ params }: { params: Promise<{ id: stri
                                 {s === "AVAILABLE" ? "มีน้ำมัน" : s === "LOW" ? "ใกล้หมด" : "หมดแล้ว"}
                               </button>
                             ))}
+                          </div>
+                        )}
+
+                        {isSelected && sel?.status === "EMPTY" && (
+                          <div className="mt-4 space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <label className="block text-[10px] font-black text-red-600 uppercase tracking-widest px-1">
+                              วันที่น้ำมันจะเข้า *
+                            </label>
+                            <input
+                              type="datetime-local"
+                              value={sel.restockEstimate || ""}
+                              onChange={(e) => updateFuelStatus(fuel, "EMPTY", e.target.value)}
+                              required
+                              className="w-full bg-white border border-red-100 text-gray-900 rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-2 focus:ring-red-500 transition-all text-sm"
+                            />
                           </div>
                         )}
                       </div>

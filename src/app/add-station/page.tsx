@@ -14,6 +14,7 @@ const AddStationMap = dynamic(
 interface FuelSelection {
   fuelType: string;
   status: "AVAILABLE" | "LOW" | "EMPTY";
+  restockEstimate?: string;
 }
 
 const ALL_FUELS = Object.keys(FUEL_TYPE_LABELS);
@@ -76,8 +77,8 @@ export default function AddStationPage() {
     }
   };
 
-  const updateFuelStatus = (fuelType: string, status: "AVAILABLE" | "LOW" | "EMPTY") => {
-    setSelectedFuels(selectedFuels.map(f => f.fuelType === fuelType ? { ...f, status } : f));
+  const updateFuelStatus = (fuelType: string, status: "AVAILABLE" | "LOW" | "EMPTY", restockEstimate?: string) => {
+    setSelectedFuels(selectedFuels.map(f => f.fuelType === fuelType ? { ...f, status, restockEstimate: status === "EMPTY" ? (restockEstimate ?? f.restockEstimate) : undefined } : f));
   };
 
   async function handleSubmit(e: React.FormEvent) {
@@ -105,7 +106,10 @@ export default function AddStationPage() {
           address: address || undefined,
           phone: phone || undefined,
           brand: finalBrand,
-          fuels: selectedFuels.length > 0 ? selectedFuels : undefined
+          fuels: selectedFuels.length > 0 ? selectedFuels.map(f => ({
+            ...f,
+            restockEstimate: f.restockEstimate ? new Date(f.restockEstimate + ":00+07:00").toISOString() : undefined
+          })) : undefined
         }),
       });
 
@@ -296,10 +300,25 @@ export default function AddStationPage() {
                                   ? (s === "AVAILABLE" ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20" : s === "LOW" ? "bg-amber-500 text-white shadow-md shadow-amber-500/20" : "bg-red-500 text-white shadow-md shadow-red-500/20")
                                   : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
                                   }`}
-                              >
+                                >
                                 {s === "AVAILABLE" ? "มีน้ำมัน" : s === "LOW" ? "ใกล้หมด" : "หมดแล้ว"}
                               </button>
                             ))}
+                          </div>
+                        )}
+
+                        {isSelected && sel?.status === "EMPTY" && (
+                          <div className="mt-4 space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <label className="block text-[10px] font-black text-red-600 uppercase tracking-widest px-1">
+                              วันที่น้ำมันจะเข้า *
+                            </label>
+                            <input
+                              type="datetime-local"
+                              value={sel.restockEstimate || ""}
+                              onChange={(e) => updateFuelStatus(fuel, "EMPTY", e.target.value)}
+                              required
+                              className="w-full bg-white border border-red-100 text-gray-900 rounded-xl px-4 py-3 font-bold focus:outline-none focus:ring-2 focus:ring-red-500 transition-all text-sm"
+                            />
                           </div>
                         )}
                       </div>

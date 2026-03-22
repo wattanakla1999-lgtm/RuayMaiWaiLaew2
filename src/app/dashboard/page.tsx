@@ -46,7 +46,9 @@ export default function DashboardPage() {
   const handleRestockSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!restockModal) return;
-    updateStatus(restockModal.stationId, restockModal.fuelType, "EMPTY", restockDate ? new Date(restockDate).toISOString() : undefined);
+    // Force interpretation as Bangkok time (+07:00)
+    const isoDate = restockDate ? new Date(restockDate + ":00+07:00").toISOString() : undefined;
+    updateStatus(restockModal.stationId, restockModal.fuelType, "EMPTY", isoDate);
     setRestockModal(null);
   };
 
@@ -300,7 +302,7 @@ export default function DashboardPage() {
                                   คาดว่าน้ำมันจะมา:
                                 </span>
                                 <span className="text-[10px] font-black text-amber-700 bg-white px-3 py-1 rounded-xl border border-amber-200">
-                                  {new Date(fuel.restockEstimate).toLocaleDateString("th-TH", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false })} น.
+                                  {new Date(fuel.restockEstimate).toLocaleString("th-TH", { timeZone: "Asia/Bangkok", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hour12: false })} น.
                                 </span>
                               </div>
                             )}
@@ -337,6 +339,7 @@ export default function DashboardPage() {
                   type="datetime-local"
                   value={restockDate}
                   onChange={(e) => setRestockDate(e.target.value)}
+                  required
                   className="w-full bg-[#F8FAF9] border border-slate-100 text-slate-900 rounded-[1.5rem] px-6 py-5 focus:outline-none focus:ring-4 focus:ring-[#008952]/10 focus:border-[#008952] transition-all font-black text-sm"
                 />
               </div>

@@ -15,7 +15,20 @@ export const CreateStationSchema = z.object({
   fuels: z.array(z.object({
     fuelType: z.enum(["DIESEL", "DIESEL_B7", "DIESEL_B20", "DIESEL_PREMIUM", "GASOHOL_91", "GASOHOL_95", "GASOHOL_E20", "GASOHOL_E85", "BENZINE"]),
     status: z.enum(["AVAILABLE", "LOW", "EMPTY"]).default("AVAILABLE"),
+    restockEstimate: z.string().datetime().nullable().optional(),
   })).optional(),
+}).superRefine((data, ctx) => {
+  if (data.fuels) {
+    data.fuels.forEach((fuel, index) => {
+      if (fuel.status === "EMPTY" && !fuel.restockEstimate) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "กรุณาระบุวันที่น้ำมันจะเข้า",
+          path: ["fuels", index, "restockEstimate"],
+        });
+      }
+    });
+  }
 });
 
 export const NearbyQuerySchema = z.object({
@@ -32,6 +45,12 @@ export const UpdateStatusSchema = z.object({
   fuelStatus: z.enum(["AVAILABLE", "LOW", "EMPTY"]),
   note: z.string().max(200).optional(),
   restockEstimate: z.string().datetime().nullable().optional(),
+}).refine((data) => {
+  if (data.fuelStatus === "EMPTY" && !data.restockEstimate) return false;
+  return true;
+}, {
+  message: "กรุณาระบุวันที่น้ำมันจะเข้า",
+  path: ["restockEstimate"],
 });
 
 export const ApproveStationSchema = z.object({
