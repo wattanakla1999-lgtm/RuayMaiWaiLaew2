@@ -107,9 +107,6 @@ export default function DashboardPage() {
             >
               <span className="group-hover:-translate-x-0.5 transition-transform text-xl font-black">←</span>
             </Link>
-            {/* <div className="w-12 h-12 rounded-2xl bg-[#008952] shadow-xl shadow-[#008952]/20 flex items-center justify-center transform transition-transform hover:scale-105 active:scale-95 cursor-pointer">
-              <span className="text-white text-2xl">⛽</span>
-            </div> */}
             <div>
               <h1 className="font-black text-xl tracking-tighter text-slate-900 leading-none">จัดการปั๊ม</h1>
               {/* <p className="text-[10px] font-bold text-[#008952] uppercase tracking-[0.2em] mt-1 opacity-70">ศูนย์รวมเจ้าของปั๊ม</p> */}
