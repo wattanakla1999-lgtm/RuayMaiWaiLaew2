@@ -24,7 +24,7 @@ export default async function LandingPage() {
       <div className="w-full max-w-md space-y-5">
 
         {/* Hero Section */}
-        <section className="bg-[#F4F5F6] rounded-[3rem] p-10 text-center space-y-6 shadow-sm border border-gray-100 flex flex-col items-center">
+        {/* <section className="bg-[#F4F5F6] rounded-[3rem] p-10 text-center space-y-6 shadow-sm border border-gray-100 flex flex-col items-center">
           <div className="w-24 h-24 rounded-3xl overflow-hidden shadow-2xl shadow-[#008952]/20 border-4 border-white transform hover:scale-105 transition-transform duration-500">
             <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" />
           </div>
@@ -39,7 +39,7 @@ export default async function LandingPage() {
               ข้อมูลน้ำมันแบบเรียลไทม์สำหรับนักเดินทางสมัยใหม่
             </p>
           </div>
-        </section>
+        </section> */}
 
         {/* Find Fuel Card */}
         <section className="bg-white rounded-[2rem] p-8 shadow-sm relative overflow-hidden">
