@@ -37,18 +37,8 @@ export default function RegisterPage() {
       const data = await res.json();
 
       if (res.ok) {
-        // Automatically login the user after successful registration
-        const loginRes = await signIn("credentials", {
-          email,
-          password,
-          redirect: false,
-        });
-
-        if (loginRes?.ok) {
-          router.push("/dashboard");
-        } else {
-          router.push("/auth");
-        }
+        // Redirect to login page with success message
+        router.push("/auth?success=registered");
       } else {
         setError(data.error || "เกิดข้อผิดพลาดในการสมัครสมาชิก");
       }

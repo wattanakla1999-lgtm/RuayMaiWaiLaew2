@@ -2,15 +2,17 @@
 
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 export default function AuthPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isRegistered = searchParams.get("success") === "registered";
 
 
   async function handleSubmit(e: React.FormEvent) {
@@ -44,6 +46,12 @@ export default function AuthPage() {
             <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-none mb-3">เข้าสู่ระบบ</h1>
             <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">สำหรับเจ้าของปั๊ม</p>
           </div>
+
+          {isRegistered && (
+            <div className="mb-6 bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold px-5 py-4 rounded-2xl animate-in fade-in slide-in-from-top-4">
+              ✅ สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบด้วยอีเมลและรหัสผ่านของคุณ
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
